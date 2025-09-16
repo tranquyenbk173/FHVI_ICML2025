@@ -1,0 +1,41 @@
+# pytorch_lightning==2.0.2
+trainer:
+  accelerator: gpu
+  devices: 1
+  logger:
+    class_path: pytorch_lightning.loggers.CSVLogger
+    init_args:
+      save_dir: output/
+      name: kitti
+  max_epochs: 200
+  val_check_interval: 50
+  num_sanity_val_steps: 0
+model:
+  model_name: vit-b16-224-dino
+  training_mode: lora
+  optimizer: fhbi
+  lr: 0.001
+  momentum: 0.9
+  weight_decay: 0.005
+  scheduler: cosine
+  warmup_steps: 500
+  rho: 1e-5
+  lora_r: 8
+  lora_alpha: 8
+  num_particles: 4
+  max_num_models: 20
+  sigma: 1
+  base_optimizer_name: adamw2
+data:
+  transform_train_id: 0
+  dataset: kitti
+  root: /vast/hvp2011/t/vtab-1k/kitti
+  size: 224
+  batch_size: 64
+  workers: 4
+model_checkpoint:
+  dirpath: saved_checkpoints
+  filename: best-step-{step}-{val_acc:.4f}
+  monitor: val_acc
+  mode: max
+  save_last: true

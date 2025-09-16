@@ -65,7 +65,6 @@ class RBF(torch.nn.Module):
     K_XY = (-gamma * dnorm2).exp()
         
     return K_XY
-  
 
 class SVGD(torch.optim.Adam):
     def __init__(self, param, rho, sigma, lr, betas, weight_decay, num_particles, train_module, net):
@@ -74,18 +73,9 @@ class SVGD(torch.optim.Adam):
         self.net = net
         self.num_particles = num_particles
         self.lr = lr
-        self.lr2 = rho
+        self.rho = rho
         self.train_module = train_module
         self.sigma = sigma
-        
-        # print(self.net)
-            
-        # self.based_optim = torch.optim.Adam(
-        #         params,
-        #         lr=lr,
-        #         betas=betas,
-        #         weight_decay=weight_decay,
-        #     )
         
     def get_learnable_block(self): #for LoRA        
         q_A = torch.empty(0).cuda()
@@ -106,7 +96,6 @@ class SVGD(torch.optim.Adam):
         i_vB = 0
         i_cls_w = 0
         i_cls_b = 0
-        # print('Get learnable params')
         for n, p in self.net.named_parameters():
             if p.requires_grad:
                 if "proj_q" in n:
@@ -116,7 +105,6 @@ class SVGD(torch.optim.Adam):
                             tq_A = torch.cat((tq_A, p_), dim=1)
                             i_qA += 1
                             if i_qA == self.num_particles:   
-                                # print(q_A.shape, tq_A.shape)
                                 q_A = torch.cat((q_A, tq_A), dim=0)
                                 tq_A = torch.empty(0).cuda()
                                 i_qA = 0
@@ -126,7 +114,6 @@ class SVGD(torch.optim.Adam):
                             tq_B = torch.cat((tq_B, p_), dim=1)
                             i_qB += 1
                             if i_qB == self.num_particles:   
-                                # print(q_A.shape, tq_A.shape)
                                 q_B = torch.cat((q_B, tq_B), dim=0)
                                 tq_B = torch.empty(0).cuda()
                                 i_qB = 0
@@ -137,7 +124,6 @@ class SVGD(torch.optim.Adam):
                             tv_A = torch.cat((tv_A, p_), dim=1)
                             i_vA += 1
                             if i_vA == self.num_particles:   
-                                # print(q_A.shape, tq_A.shape)
                                 v_A = torch.cat((v_A, tv_A), dim=0)
                                 tv_A = torch.empty(0).cuda()
                                 i_vA = 0
@@ -147,7 +133,6 @@ class SVGD(torch.optim.Adam):
                             tv_B = torch.cat((tv_B, p_), dim=1)
                             i_vB += 1
                             if i_vB == self.num_particles:   
-                                # print(q_A.shape, tq_A.shape)
                                 v_B = torch.cat((v_B, tv_B), dim=0)
                                 tv_B = torch.empty(0).cuda()
                                 i_vB = 0                 
@@ -158,7 +143,6 @@ class SVGD(torch.optim.Adam):
                             tcls_w = torch.cat((tcls_w, p_), dim=1)
                             i_cls_w += 1
                             if i_cls_w == self.num_particles:   
-                                # print(q_A.shape, tq_A.shape)
                                 cls_w = torch.cat((cls_w, tcls_w), dim=0)
                                 tcls_w = torch.empty(0).cuda()
                                 i_cls_w = 0
@@ -168,7 +152,6 @@ class SVGD(torch.optim.Adam):
                             tcls_b = torch.cat((tcls_b, p_), dim=1)
                             i_cls_b += 1
                             if i_cls_b == self.num_particles:   
-                                # print(q_A.shape, tq_A.shape)
                                 cls_b = torch.cat((cls_b, tcls_b), dim=0)
                                 tcls_b = torch.empty(0).cuda()
                                 i_cls_b = 0
@@ -213,7 +196,6 @@ class SVGD(torch.optim.Adam):
                             tq_B = torch.cat((tq_B, p_), dim=1)
                             i_qB += 1
                             if i_qB == self.num_particles:   
-                                # print(q_A.shape, tq_A.shape)
                                 q_B = torch.cat((q_B, tq_B), dim=0)
                                 tq_B = torch.empty(0).cuda()
                                 i_qB = 0
@@ -224,7 +206,6 @@ class SVGD(torch.optim.Adam):
                             tv_A = torch.cat((tv_A, p_), dim=1)
                             i_vA += 1
                             if i_vA == self.num_particles:   
-                                # print(q_A.shape, tq_A.shape)
                                 v_A = torch.cat((v_A, tv_A), dim=0)
                                 tv_A = torch.empty(0).cuda()
                                 i_vA = 0
@@ -234,7 +215,6 @@ class SVGD(torch.optim.Adam):
                             tv_B = torch.cat((tv_B, p_), dim=1)
                             i_vB += 1
                             if i_vB == self.num_particles:   
-                                # print(q_A.shape, tq_A.shape)
                                 v_B = torch.cat((v_B, tv_B), dim=0)
                                 tv_B = torch.empty(0).cuda()
                                 i_vB = 0
@@ -258,15 +238,6 @@ class SVGD(torch.optim.Adam):
                                 cls_b = torch.cat((cls_b, tcls_b), dim=0)
                                 tcls_b = torch.empty(0).cuda()
                                 i_cls_b = 0
-                    
-                            
-        # print('q_A_grad', q_A.shape, q_A)
-        # print('q_B_grad', q_B.shape, q_B)
-        # print('v_A_grad', v_A.shape, v_A)
-        # print('v_B_grad', v_B.shape, v_B)
-        # print('cls_w', cls_w.shape)
-        # print('cls_b', cls_b.shape)
-        # exit()
                     
         return q_A, q_B, v_A, v_B, cls_w, cls_b
     
@@ -306,16 +277,7 @@ class SVGD(torch.optim.Adam):
         return kernel_qA, kernel_qB, kernel_vA, kernel_vB, kernel_clsW, kernel_clsB, q_A_grad, q_B_grad, v_A_grad, v_B_grad, clsW_gradK, clsB_gradK
     
     def score_func(self):
-        q_A_grad, q_B_grad, v_A_grad, v_B_grad, clsW_grad, clsB_grad = self.get_grad1() #dlog_prob(X)'
-        
-        # try:
-        #     cls_grad_w = self.net.lora_vit.fc.weight.grad.data
-        #     cls_grad_b = self.net.lora_vit.fc.bias.grad.data
-        # except:
-        #     cls_grad_w = self.net.fc.weight.grad.data
-        #     cls_grad_b = self.net.fc.bias.grad.data
-            
-        # print('gradd_cls', cls_grad_w.sum(), cls_grad_w)
+        q_A_grad, q_B_grad, v_A_grad, v_B_grad, clsW_grad, clsB_grad = self.get_grad1() 
         
         self.zero_grad()
         q_A, q_B, v_A, v_B, clsW, clsB = self.get_learnable_block()
@@ -338,19 +300,11 @@ class SVGD(torch.optim.Adam):
         
         grad_clsB = (-kernel_clsB.detach().matmul(clsB_grad) + clsB_gradK) / self.num_particles
         
-        # grad_qA, grad_qB, grad_vA, grad_vB = -q_A_grad, -q_B_grad, -v_A_grad, -v_B_grad
-        
         return grad_qA, grad_qB, grad_vA, grad_vB, grad_clsW, grad_clsB
 
     def step_(self):
         
-        
-
-        
         q_A_grad, q_B_grad, v_A_grad, v_B_grad, cls_grad_w, cls_grad_b = self.score_func()
-        
-        # print(q_A_grad.shape, q_B_grad.shape, v_A_grad.shape, v_B_grad.shape)
-        
         
         updated_n = []
         
@@ -361,26 +315,21 @@ class SVGD(torch.optim.Adam):
                     if p.requires_grad and n not in updated_n: 
                     
                         if f'blocks.{str(layer_id)}' in n:
-                            # print('B-name', n)
                             if "proj_q" in n:
                                 if f"w_a.layer.{net_id}" in n:
-                                    # print(n)
                                     updated_n.append(n)
                                     temp_w = p.data
                                     p.data = temp_w + self.lr * q_A_grad[layer_id][net_id].view(p.data.shape)
                                 elif f"w_b.layer.{net_id}" in n:
-                                    # print(n)
                                     updated_n.append(n)
                                     temp_w = p.data
                                     p.data = temp_w + self.lr * q_B_grad[layer_id][net_id].view(p.data.shape)
                             elif "proj_v" in n:
                                 if f"w_a.layer.{net_id}" in n:
-                                    # print(n)
                                     updated_n.append(n)
                                     temp_w = p.data
                                     p.data = temp_w + self.lr * v_A_grad[layer_id][net_id].view(p.data.shape)
                                 elif f"w_b.layer.{net_id}" in n:
-                                    # print(n)
                                     updated_n.append(n)
                                     temp_w = p.data
                                     p.data = temp_w + self.lr * v_B_grad[layer_id][net_id].view(p.data.shape)
@@ -388,28 +337,28 @@ class SVGD(torch.optim.Adam):
                         elif 'fc' in n:
                             if 'weight' in n:
                                 if f"layer.{net_id}" in n:
-                                    # print(n)
                                     updated_n.append(n)
                                     temp_w = p.data
                                     p.data = temp_w + self.lr * cls_grad_w[layer_id][net_id].view(p.data.shape)
                             elif 'bias' in n and f"layer.{net_id}" in n:
-                                    # print(n)
                                     updated_n.append(n)
                                     temp_w = p.data
                                     p.data = temp_w + self.lr * cls_grad_b[layer_id][net_id].view(p.data.shape)
         
-
-
 class FHBI(torch.optim.Adam):
-    def __init__(self, param, rho, sigma, lr, betas, weight_decay, num_particles, train_module, net):
+    def __init__(self, param, rho, sigma, lr, betas, weight_decay, num_particles, train_module, net, base_optimizer_name, decoupled_weight_decay: bool = True):
         super(FHBI, self).__init__(param, lr, betas, weight_decay)
         self.K = RBF(sigma)
         self.net = net
         self.num_particles = num_particles
         self.lr = lr
-        self.lr2 = rho
+        self.rho = rho
+        self.weight_decay = weight_decay
+        self.betas = betas
         self.train_module = train_module
         self.sigma = sigma
+        self.base_optimizer_name = base_optimizer_name
+        self.decoupled_weight_decay = decoupled_weight_decay 
         
     def get_learnable_block(self): #for LoRA        
         q_A = torch.empty(0).cuda()
@@ -430,6 +379,7 @@ class FHBI(torch.optim.Adam):
         i_vB = 0
         i_cls_w = 0
         i_cls_b = 0
+
         for n, p in self.net.named_parameters():
             if p.requires_grad:
                 if "proj_q" in n:
@@ -489,7 +439,7 @@ class FHBI(torch.optim.Adam):
                                 cls_b = torch.cat((cls_b, tcls_b), dim=0)
                                 tcls_b = torch.empty(0).cuda()
                                 i_cls_b = 0
-                            
+        params = [q_A, q_B, v_A, v_B, cls_w, cls_b]
         return q_A, q_B, v_A, v_B, cls_w, cls_b
     
     def get_grad1(self): #for LoRA
@@ -624,7 +574,7 @@ class FHBI(torch.optim.Adam):
             kernel_qA, kernel_qB, kernel_vA, kernel_vB, kernel_clsW, kernel_clsB, q_A_gradK, q_B_gradK, v_A_gradK, v_B_gradK, clsW_gradK, clsB_gradK = torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), 0, 0, 0, 0, 0, 0
     
         kernel_tuple = (kernel_qA, kernel_qB, kernel_vA, kernel_vB, kernel_clsW, kernel_clsB, q_A_gradK, q_B_gradK, v_A_gradK, v_B_gradK, clsW_gradK, clsB_gradK)
-        # update perturbed weights
+        
         updated_n = []
         
         for net_id in range(self.num_particles):
@@ -632,41 +582,41 @@ class FHBI(torch.optim.Adam):
                 for n, p in self.net.lora_vit.named_parameters():
                     
                     if p.requires_grad and n not in updated_n: 
-                    
+                        
                         if f'blocks.{str(layer_id)}' in n:
                             if "proj_q" in n:
                                 if f"w_a.layer.{net_id}" in n:
                                     updated_n.append(n)
                                     grad_n = torch.nn.functional.normalize(q_A_grad[layer_id][net_id],  p=2, dim=0)
-                                    p.data = p.data + self.lr2 * grad_n.view(p.data.shape)
+                                    p.data = p.data + self.rho * grad_n.view(p.data.shape)
                                 elif f"w_b.layer.{net_id}" in n:
                                     updated_n.append(n)
                                     grad_n = torch.nn.functional.normalize(q_B_grad[layer_id][net_id],  p=2, dim=0)
-                                    p.data = p.data + self.lr2 * grad_n.view(p.data.shape)
+                                    p.data = p.data + self.rho * grad_n.view(p.data.shape)
                             elif "proj_v" in n:
                                 if f"w_a.layer.{net_id}" in n:
                                     updated_n.append(n)
                                     grad_n = torch.nn.functional.normalize(v_A_grad[layer_id][net_id],  p=2, dim=0)
-                                    p.data = p.data + self.lr2 * grad_n.view(p.data.shape)
+                                    p.data = p.data + self.rho * grad_n.view(p.data.shape)
                                 elif f"w_b.layer.{net_id}" in n:
                                     updated_n.append(n)
                                     grad_n = torch.nn.functional.normalize(v_B_grad[layer_id][net_id],  p=2, dim=0)
-                                    p.data = p.data + self.lr2 * grad_n.view(p.data.shape)
+                                    p.data = p.data + self.rho * grad_n.view(p.data.shape)
                                     
                         elif 'fc' in n:
                             if 'weight' in n:
                                 if f"layer.{net_id}" in n:
                                     updated_n.append(n)
                                     grad_n = torch.nn.functional.normalize(clsW_grad[layer_id][net_id],  p=2, dim=0)
-                                    p.data = p.data + self.lr2 * grad_n.view(p.data.shape)
+                                    p.data = p.data + self.rho * grad_n.view(p.data.shape)
                             elif 'bias' in n and f"layer.{net_id}" in n:
                                     updated_n.append(n)
                                     grad_n = torch.nn.functional.normalize(clsB_grad[layer_id][net_id],  p=2, dim=0)
-                                    p.data = p.data + self.lr2 * grad_n.view(p.data.shape)
+                                    p.data = p.data + self.rho * grad_n.view(p.data.shape)
                                     
         return org_weight_tuple, kernel_tuple
     
-    def step2(self, org_weight_tuple, kernel_tuple):
+    def step2(self, org_weight_tuple, kernel_tuple, zero_grad=True):
         q_A_grad, q_B_grad, v_A_grad, v_B_grad, clsW_grad, clsB_grad = self.get_grad1() #dlog_prob(X)'
         q_A, q_B, v_A, v_B, clsW, clsB = org_weight_tuple
         kernel_qA, kernel_qB, kernel_vA, kernel_vB, kernel_clsW, kernel_clsB, q_A_gradK, q_B_gradK, v_A_gradK, v_B_gradK, clsW_gradK, clsB_gradK = kernel_tuple
@@ -681,57 +631,156 @@ class FHBI(torch.optim.Adam):
         
         #update weight:
         updated_n = []
-        
-        for net_id in range(self.num_particles):
-            for layer_id in range(12):   
-                for n, p in self.net.lora_vit.named_parameters():
-                    
-                    if p.requires_grad and n not in updated_n: 
-                    
-                        if f'blocks.{str(layer_id)}' in n:
-                            if "proj_q" in n:
-                                if f"w_a.layer.{net_id}" in n:
-                                    updated_n.append(n)
-                                    p.data = q_A[layer_id][net_id].view(p.data.shape) + self.lr * grad_qA[layer_id][net_id].view(p.data.shape)
-                                elif f"w_b.layer.{net_id}" in n:
-                                    updated_n.append(n)
-                                    p.data = q_B[layer_id][net_id].view(p.data.shape) + self.lr * grad_qB[layer_id][net_id].view(p.data.shape)
-                            elif "proj_v" in n:
-                                if f"w_a.layer.{net_id}" in n:
-                                    updated_n.append(n)
-                                    p.data = v_A[layer_id][net_id].view(p.data.shape) + self.lr * grad_vA[layer_id][net_id].view(p.data.shape)
-                                elif f"w_b.layer.{net_id}" in n:
-                                    updated_n.append(n)
-                                    p.data = v_B[layer_id][net_id].view(p.data.shape) + self.lr * grad_vB[layer_id][net_id].view(p.data.shape)
-                                    
-                        elif 'fc' in n:
-                            if 'weight' in n:
-                                if f"layer.{net_id}" in n:
-                                    updated_n.append(n)
-                                    p.data = clsW[layer_id][net_id].view(p.data.shape) + self.lr * grad_clsW[layer_id][net_id].view(p.data.shape)
-                            elif 'bias' in n and f"layer.{net_id}" in n:
-                                    updated_n.append(n)
-                                    temp_w = p.data
-                                    p.data = clsB[layer_id][net_id].view(p.data.shape) + self.lr * grad_clsB[layer_id][net_id].view(p.data.shape)
-        
-    
-    def score_func(self):
-        q_A_grad, q_B_grad, v_A_grad, v_B_grad, clsW_grad, clsB_grad = self.get_grad1() #dlog_prob(X)'
-        
-        self.zero_grad()
-        q_A, q_B, v_A, v_B, clsW, clsB = self.get_learnable_block()
-        q_A, q_B, v_A, v_B, clsW, clsB = q_A.clone().detach().requires_grad_(True), q_B.clone().detach().requires_grad_(True), v_A.clone().detach().requires_grad_(True), v_B.clone().detach().requires_grad_(True),  clsW.clone().detach().requires_grad_(True), clsB.clone().detach().requires_grad_(True)
-        
-        if q_A.shape[0] > 0:
-            kernel_qA, kernel_qB, kernel_vA, kernel_vB, kernel_clsW, kernel_clsB, q_A_gradK, q_B_gradK, v_A_gradK, v_B_gradK, clsW_gradK, clsB_gradK = self.kernel_func(q_A, q_B, v_A, v_B, clsW, clsB) #self.K(self.X, self.X.detach())
-        else:
-            kernel_qA, kernel_qB, kernel_vA, kernel_vB, kernel_clsW, kernel_clsB, q_A_gradK, q_B_gradK, v_A_gradK, v_B_gradK, clsW_gradK, clsB_gradK = torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), torch.ones(size=(q_A_grad.shape[0], q_A_grad.shape[0])).cuda(), 0, 0, 0, 0, 0, 0
-        
-        grad_qA = (-kernel_qA.detach().matmul(q_A_grad) + q_A_gradK) / self.num_particles
-        grad_qB = (-kernel_qB.detach().matmul(q_B_grad) + q_B_gradK) / self.num_particles
-        grad_vA = (-kernel_vA.detach().matmul(v_A_grad) + v_A_gradK) / self.num_particles
-        grad_vB = (-kernel_vB.detach().matmul(v_B_grad) + v_B_gradK) / self.num_particles
-        grad_clsW = (-kernel_clsW.detach().matmul(clsW_grad) + clsW_gradK) / self.num_particles
-        grad_clsB = (-kernel_clsB.detach().matmul(clsB_grad) + clsB_gradK) / self.num_particles
-        
-        return grad_qA, grad_qB, grad_vA, grad_vB, grad_clsW, grad_clsB
+        if self.base_optimizer_name == "sgd":
+            for net_id in range(self.num_particles):
+                for layer_id in range(12):   
+                    for n, p in self.net.lora_vit.named_parameters():
+                        if p.requires_grad and n not in updated_n: 
+
+                            if f'blocks.{str(layer_id)}' in n:
+                                if "proj_q" in n:
+                                    if f"w_a.layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        print("name:", n)
+                                        p_grad = -self.lr * grad_qA[layer_id][net_id].view(p.data.shape)
+                                        p.data = q_A[layer_id][net_id].view(p.data.shape) - self.lr * p_grad
+                                    elif f"w_b.layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        p_grad = -grad_qB[layer_id][net_id].view(p.data.shape)
+                                        p.data = q_B[layer_id][net_id].view(p.data.shape) - self.lr * p_grad
+                                elif "proj_v" in n:
+                                    if f"w_a.layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        p_grad = -grad_vA[layer_id][net_id].view(p.data.shape)
+                                        p.data = v_A[layer_id][net_id].view(p.data.shape) - self.lr * p_grad
+                                    elif f"w_b.layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        p_grad = -grad_vB[layer_id][net_id].view(p.data.shape)
+                                        p.data = v_B[layer_id][net_id].view(p.data.shape) - self.lr * p_grad
+                                        
+                            elif 'fc' in n:
+                                if 'weight' in n:
+                                    if f"layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        p_grad = -grad_clsW[layer_id][net_id].view(p.data.shape)
+                                        p.data = clsW[layer_id][net_id].view(p.data.shape) - self.lr * p_grad
+                                elif 'bias' in n and f"layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        p_grad = -grad_clsB[layer_id][net_id].view(p.data.shape)
+                                        p.data = clsB[layer_id][net_id].view(p.data.shape) - self.lr * p_grad
+
+        elif self.base_optimizer_name == "adamw": # Uses AdamW as the base optimizer
+            # Based on PyTorch implementation: https://github.com/pytorch/pytorch/blob/main/torch/optim/adam.py#L323
+            eps = 1e-6
+            beta1, beta2 = self.betas[0], self.betas[1]
+            for net_id in range(self.num_particles):
+                for layer_id in range(12):   
+                    for n, p in self.net.lora_vit.named_parameters():
+                        if p.requires_grad and n not in updated_n:
+                            if f'blocks.{str(layer_id)}' in n:
+                                if "proj_q" in n:
+                                    if f"w_a.layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        grad = -grad_qA[layer_id][net_id].view(p.data.shape)
+                                        state = self.state[p]
+                                        if len(state) == 0:
+                                            state['step'] = 0
+                                            state['exp_avg'] = torch.zeros_like(p.data)
+                                            state['exp_avg_sq'] = torch.zeros_like(p.data)
+                                        exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
+                                        state['step'] += 1  #t = t+1
+                                        p.data.mul_(1 - self.lr * self.weight_decay) 
+                                        exp_avg.mul_(beta1).add_(grad, alpha= 1 - beta1) 
+                                        exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)
+                                        exp_avg_hat = exp_avg / (1 - beta1 ** state['step'])
+                                        exp_avg_sq_hat = exp_avg_sq / (1 - beta2 ** state['step'] ) 
+                                        denom = exp_avg_sq_hat.sqrt().add_(eps)  
+                                        p.data.addcdiv_(exp_avg_hat, denom, value = -self.lr) 
+                                    elif f"w_b.layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        grad = -grad_qB[layer_id][net_id].view(p.data.shape)
+                                        state = self.state[p]
+                                        if len(state) == 0:
+                                            state['step'] = 0
+                                            state['exp_avg'] = torch.zeros_like(p.data)
+                                            state['exp_avg_sq'] = torch.zeros_like(p.data)
+                                        exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
+                                        state['step'] += 1  #t = t+1
+                                        p.data.mul_(1 - self.lr * self.weight_decay) 
+                                        exp_avg.mul_(beta1).add_(grad, alpha= 1 - beta1) 
+                                        exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2) 
+                                        exp_avg_hat = exp_avg / (1 - beta1 ** state['step']) 
+                                        exp_avg_sq_hat = exp_avg_sq / (1 - beta2 ** state['step'] ) 
+                                        denom = exp_avg_sq_hat.sqrt().add_(eps) 
+                                        p.data.addcdiv_(exp_avg_hat, denom, value = -self.lr) 
+                                elif "proj_v" in n:
+                                    if f"w_a.layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        grad = -grad_vA[layer_id][net_id].view(p.data.shape)
+                                        state = self.state[p]
+                                        if len(state) == 0:
+                                            state['step'] = 0
+                                            state['exp_avg'] = torch.zeros_like(p.data)
+                                            state['exp_avg_sq'] = torch.zeros_like(p.data)
+                                        exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
+                                        state['step'] += 1  #t = t+1
+                                        p.data.mul_(1 - self.lr * self.weight_decay)
+                                        exp_avg.mul_(beta1).add_(grad, alpha= 1 - beta1) 
+                                        exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)
+                                        exp_avg_hat = exp_avg / (1 - beta1 ** state['step']) 
+                                        exp_avg_sq_hat = exp_avg_sq / (1 - beta2 ** state['step'] )
+                                        denom = exp_avg_sq_hat.sqrt().add_(eps)  
+                                        p.data.addcdiv_(exp_avg_hat, denom, value = -self.lr) 
+                                    elif f"w_b.layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        grad = -grad_vB[layer_id][net_id].view(p.data.shape)
+                                        state = self.state[p]
+                                        if len(state) == 0:
+                                            state['step'] = 0
+                                            state['exp_avg'] = torch.zeros_like(p.data)
+                                            state['exp_avg_sq'] = torch.zeros_like(p.data)
+                                        exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
+                                        state['step'] += 1  #t = t+1
+                                        p.data.mul_(1 - self.lr * self.weight_decay) 
+                                        exp_avg.mul_(beta1).add_(grad, alpha= 1 - beta1) 
+                                        exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2) 
+                                        exp_avg_hat = exp_avg / (1 - beta1 ** state['step'])
+                                        exp_avg_sq_hat = exp_avg_sq / (1 - beta2 ** state['step'] ) 
+                                        denom = exp_avg_sq_hat.sqrt().add_(eps) 
+                                        p.data.addcdiv_(exp_avg_hat, denom, value = -self.lr) 
+                            elif 'fc' in n:
+                                if 'weight' in n:
+                                    if f"layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        grad = -grad_clsW[layer_id][net_id].view(p.data.shape)
+                                        state = self.state[p]
+                                        if len(state) == 0:
+                                            state['step'] = 0
+                                            state['exp_avg'] = torch.zeros_like(p.data)
+                                            state['exp_avg_sq'] = torch.zeros_like(p.data)
+                                        exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
+                                        state['step'] += 1  #t = t+1
+                                        p.data.mul_(1 - self.lr * self.weight_decay) 
+                                        exp_avg.mul_(beta1).add_(grad, alpha= 1 - beta1)
+                                        exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2) 
+                                        exp_avg_hat = exp_avg / (1 - beta1 ** state['step']) 
+                                        exp_avg_sq_hat = exp_avg_sq / (1 - beta2 ** state['step'] ) 
+                                        denom = exp_avg_sq_hat.sqrt().add_(eps) 
+                                        p.data.addcdiv_(exp_avg_hat, denom, value = -self.lr) 
+                                elif 'bias' in n and f"layer.{net_id}" in n:
+                                        updated_n.append(n)
+                                        grad = -grad_clsB[layer_id][net_id].view(p.data.shape)
+                                        state = self.state[p]
+                                        if len(state) == 0:
+                                            state['step'] = 0
+                                            state['exp_avg'] = torch.zeros_like(p.data)
+                                            state['exp_avg_sq'] = torch.zeros_like(p.data)
+                                        exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
+                                        state['step'] += 1  #t = t+1
+                                        p.data.mul_(1 - self.lr * self.weight_decay) 
+                                        exp_avg.mul_(beta1).add_(grad, alpha= 1 - beta1) 
+                                        exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2) 
+                                        exp_avg_hat = exp_avg / (1 - beta1 ** state['step']) 
+                                        exp_avg_sq_hat = exp_avg_sq / (1 - beta2 ** state['step'] ) 
+                                        denom = exp_avg_sq_hat.sqrt().add_(eps)  
+                                        p.data.addcdiv_(exp_avg_hat, denom, value = -self.lr) 

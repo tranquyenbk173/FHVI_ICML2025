@@ -1,0 +1,41 @@
+# pytorch_lightning==2.5.2
+trainer:
+  accelerator: gpu
+  devices: 1
+  logger:
+    class_path: pytorch_lightning.loggers.CSVLogger
+    init_args:
+      save_dir: output/
+      name: oxford_iiit_pet
+  max_epochs: 150
+  val_check_interval: 50
+  num_sanity_val_steps: 0
+model:
+  model_name: vit-b16-224-dino
+  optimizer: fhbi
+  rho: 0.03
+  lr: 1.0
+  weight_decay: 0.8
+  scheduler: cosine
+  warmup_steps: 500
+  label_smoothing: 0.0
+  training_mode: lora
+  lora_r: 8
+  lora_alpha: 8
+  num_particles: 4
+  weights_path: checkpoint/B_16.pth
+  max_num_models: 20
+  sigma: 0.4
+data:
+  dataset: pets37
+  root: ../Z.Data/vtab-1k/pets37
+  size: 224
+  batch_size: 64
+  workers: 4
+  transform_train_id: 2
+model_checkpoint:
+  dirpath: saved_checkpoints
+  filename: best-step-{{step}}-{{val_acc:.4f}}
+  monitor: val_acc
+  save_last: true
+  mode: max

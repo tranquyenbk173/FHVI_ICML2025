@@ -82,7 +82,8 @@ class ClassificationModel(pl.LightningModule):
         epsilon: float = 0.01,
         cov_mat: bool = True,
         max_num_models: int = 20,
-        sigma = 1
+        sigma = None,
+        base_optimizer_name = "sgd", 
     ):
         """Classification Model
 
@@ -143,6 +144,7 @@ class ClassificationModel(pl.LightningModule):
         self.cov_mat = cov_mat
         self.max_num_models = max_num_models
         self.sigma = sigma
+        self.base_optimizer_name = base_optimizer_name
         # Initialize network
         try:
             model_path = MODEL_DICT[self.model_name]
@@ -161,12 +163,10 @@ class ClassificationModel(pl.LightningModule):
             # Initialize with pretrained weights
             if self.optimizer in ['svgd', "deep_ens", "fhbi"]:
                 print('Model name', self.model_name)
-                # self.net = ViT(name='B_16_imagenet1k', pretrained=True, num_classes=self.n_classes, image_size=self.image_size, num_particles=self.num_particles)
                 self.net = ViT(name='vit-b16-224-in21k', pretrained=True, num_classes=self.n_classes, image_size=self.image_size, num_particles=self.num_particles, weight_path=weights_path)
                 
                 self.net = self.net.cuda()
                 
-
         # Load checkpoint weights
         if self.weights:
             print(f"Loaded weights from {self.weights}")
@@ -181,7 +181,6 @@ class ClassificationModel(pl.LightningModule):
 
             self.net.load_state_dict(new_state_dict, strict=True)
             
-
         # Prepare model depending on fine-tuning mode
         if self.training_mode == "linear":
             # Freeze transformer layers and keep classifier unfrozen
@@ -205,10 +204,7 @@ class ClassificationModel(pl.LightningModule):
                 
                 self.net = LoRA_ViT(num_particles=self.num_particles, vit_model=self.net, r=self.lora_r, alpha=self.lora_alpha, num_classes=self.n_classes)
                     
-                
-                    
         elif self.training_mode == "block":
-            
             config = AutoConfig.from_pretrained(model_path)
             config.image_size = self.image_size
 
@@ -246,34 +242,34 @@ class ClassificationModel(pl.LightningModule):
         self.train_metrics = MetricCollection(
             {
                 "acc": Accuracy(num_classes=self.n_classes, task="multiclass", top_k=1),
-                "acc_top5": Accuracy(
-                    num_classes=self.n_classes,
-                    task="multiclass",
-                    top_k=min(5, self.n_classes),
-                ),
-                "ece": CalibrationError(num_classes=self.n_classes, norm='l1')
+                # "acc_top5": Accuracy(
+                #     num_classes=self.n_classes,
+                #     task="multiclass",
+                #     top_k=min(5, self.n_classes),
+                # ),
+                #"ece": CalibrationError(num_classes=self.n_classes, norm='l1')
             }
         )
         self.val_metrics = MetricCollection(
             {
                 "acc": Accuracy(num_classes=self.n_classes, task="multiclass", top_k=1),
-                "acc_top5": Accuracy(
-                    num_classes=self.n_classes,
-                    task="multiclass",
-                    top_k=min(5, self.n_classes),
-                ),
-                "ece": CalibrationError(num_classes=self.n_classes, norm='l1')
+                # "acc_top5": Accuracy(
+                #     num_classes=self.n_classes,
+                #     task="multiclass",
+                #     top_k=min(5, self.n_classes),
+                # ),
+                #"ece": CalibrationError(num_classes=self.n_classes, norm='l1')
             }
         )
         self.test_metrics = MetricCollection(
             {
                 "acc": Accuracy(num_classes=self.n_classes, task="multiclass", top_k=1),
-                "acc_top5": Accuracy(
-                    num_classes=self.n_classes,
-                    task="multiclass",
-                    top_k=min(5, self.n_classes),
-                ),
-                "ece": CalibrationError(num_classes=self.n_classes, norm='l1'),
+                # "acc_top5": Accuracy(
+                #     num_classes=self.n_classes,
+                #     task="multiclass",
+                #     top_k=min(5, self.n_classes),
+                # ),
+                #"ece": CalibrationError(num_classes=self.n_classes, norm='l1'),
                 "stats": StatScores(
                     task="multiclass", average=None, num_classes=self.n_classes
                 ),
@@ -511,6 +507,7 @@ class ClassificationModel(pl.LightningModule):
                 )
         elif self.optimizer == "fhbi":  #use Adam as the base optimizer by default @@        
             optimizer =  FHBI(
+                net=self.net,
                 param = self.net.parameters(), 
                 rho=self.rho,
                 sigma=self.sigma, 
@@ -519,7 +516,7 @@ class ClassificationModel(pl.LightningModule):
                 weight_decay=self.weight_decay, 
                 num_particles=self.num_particles, 
                 train_module=self, 
-                net=self.net, 
+                base_optimizer_name=self.base_optimizer_name, 
                 )
         else:
             raise ValueError(
@@ -534,7 +531,7 @@ class ClassificationModel(pl.LightningModule):
                 num_warmup_steps=self.warmup_steps,
             )
         elif self.scheduler == "none":
-            scheduler = LambdaLR(optimizer, lambda _: 1)
+            scheduler = LambdaLR(optimizer, lambda _: 0.99)
             
         else:
             raise ValueError(
