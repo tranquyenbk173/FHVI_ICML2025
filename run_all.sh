@@ -10,7 +10,7 @@ for config_file in "$CONFIG_DIR"/*.yaml; do
     sbatch <<EOT
 #!/bin/bash
 
-#SBATCH --job-name=t
+#SBATCH --job-name=test
 #SBATCH --output=$LOG_DIR/%A.out
 #SBATCH --error=$LOG_DIR/%A.err
 #SBATCH --gres=gpu:1

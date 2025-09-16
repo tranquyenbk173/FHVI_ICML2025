@@ -25,7 +25,7 @@ model:
   max_num_models: 20
   scheduler: cosine
   sigma: 0.3
-  base_optimizer_name: adamw2
+  base_optimizer_name: adamw
 data:
   transform_train_id: 1
   dataset: smallnorb_azi

@@ -26,7 +26,7 @@ model:
   label_smoothing: 0.1
   max_num_models: 20
   sigma: 1
-  base_optimizer_name: adamw2
+  base_optimizer_name: adamw
 data:
   transform_train_id: 0
   dataset: SUN397

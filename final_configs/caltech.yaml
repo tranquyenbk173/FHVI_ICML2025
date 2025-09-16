@@ -26,7 +26,7 @@ model:
   max_num_models: 20
   scheduler: cosine
   sigma: 1.5
-  base_optimizer_name: adamw2
+  base_optimizer_name: adamw
 data:
   transform_train_id: 1
   dataset: caltech101
