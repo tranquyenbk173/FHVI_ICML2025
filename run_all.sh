@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # Directory containing the config files
-CONFIG_DIR="/scratch/hvp2011/t/FHVI/final_configs/"
+CONFIG_DIR="/scratch/hvp2011/t/FHVI/final_configs"
 
 # Directory for logs
-LOG_DIR="/scratch/hvp2011/t/FHVI/logs_sbatch/"
+LOG_DIR="/scratch/hvp2011/t/FHVI/logs_sbatch/final"
 
 for config_file in "$CONFIG_DIR"/*.yaml; do
     sbatch <<EOT
 #!/bin/bash
 
-#SBATCH --job-name=test
+#SBATCH --job-name=train
 #SBATCH --output=$LOG_DIR/%A.out
 #SBATCH --error=$LOG_DIR/%A.err
 #SBATCH --gres=gpu:1
@@ -20,7 +20,7 @@ for config_file in "$CONFIG_DIR"/*.yaml; do
 #SBATCH --mail-type=begin
 #SBATCH --mail-type=end
 #SBATCH --mail-type=fail
-#SBATCH --mail-user=tuantruong.shecodes@gmail.com
+#SBATCH --mail-user=manhtuan15042000@gmail.com
 
 
 module purge

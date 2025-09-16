@@ -83,7 +83,7 @@ model:
   sigma: 0.4
 data:
   dataset: pets37
-  root: ../Z.Data/vtab-1k/pets37
+  root: /vast/hvp2011/t/vtab-1k/pets37
   num_classes: null
   size: 224
   min_scale: 0.08

@@ -83,7 +83,7 @@ model:
   sigma: 1.2
 data:
   dataset: resisc45
-  root: /scratch/hvp2011/phi/finetune/Z.Data/vtab-1k/resisc45
+  root: /vast/hvp2011/t/vtab-1k/resisc45
   num_classes: null
   size: 224
   min_scale: 0.08

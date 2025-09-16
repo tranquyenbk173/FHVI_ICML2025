@@ -28,7 +28,7 @@ model:
   sigma: 0.4
 data:
   dataset: pets37
-  root: ../Z.Data/vtab-1k/pets37
+  root: /vast/hvp2011/t/vtab-1k/oxford_iiit_pet
   size: 224
   batch_size: 64
   workers: 4

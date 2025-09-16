@@ -34,7 +34,7 @@ optimizer: fhbi
 rand_aug_m: 9
 rand_aug_n: 0
 rho: 0.03
-root: /scratch/hvp2011/phi/finetune/Z.Data/vtab-1k/resisc45
+root: /vast/hvp2011/t/vtab-1k/resisc45
 scheduler: cosine
 sigma: 1.2
 size: 224

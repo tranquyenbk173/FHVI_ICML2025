@@ -28,7 +28,7 @@ model:
 data:
   transform_train_id: 0
   dataset: resisc45
-  root: /scratch/hvp2011/phi/finetune/Z.Data/vtab-1k/resisc45
+  root: /vast/hvp2011/t/vtab-1k/resisc45
   size: 224
   batch_size: 64
   workers: 4

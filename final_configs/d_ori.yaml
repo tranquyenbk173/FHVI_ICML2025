@@ -16,7 +16,7 @@ model:
   optimizer: fhbi
   lr: 2.5
   momentum: 0.9
-  weight_decay: 0.0
+  weight_decay: 0.001
   scheduler: cosine
   warmup_steps: 500
   rho: 0.03

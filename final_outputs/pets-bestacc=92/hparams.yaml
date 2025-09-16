@@ -34,7 +34,7 @@ optimizer: fhbi
 rand_aug_m: 9
 rand_aug_n: 0
 rho: 0.03
-root: ../Z.Data/vtab-1k/pets37
+root: /vast/hvp2011/t/vtab-1k/pets37
 scheduler: cosine
 sigma: 0.4
 size: 224
